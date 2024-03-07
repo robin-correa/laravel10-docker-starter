@@ -1,0 +1,49 @@
+version: "3.8"
+services:
+    api:
+        build:
+            context: .
+            dockerfile: Dockerfile.local
+            target: php
+            args:
+                - APP_ENV=${APP_ENV}
+        environment:
+            - APP_ENV=${APP_ENV}
+        working_dir: /app
+        volumes:
+            - ./:/app
+        ports:
+            - 8080:8080
+        depends_on:
+            - database
+
+    database:
+        image: mysql:8.0
+        restart: unless-stopped
+        ports:
+            -   3306:3306
+        environment:
+            - MYSQL_DATABASE=${DB_DATABASE}
+            - MYSQL_USER=${DB_USERNAME}
+            - MYSQL_PASSWORD=${DB_PASSWORD}
+            - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+        volumes:
+            - db-data:/var/lib/mysql
+
+    redis:
+      image: redis:alpine
+      command: redis-server --appendonly yes --requirepass  "${REDIS_PASSWORD}"
+      ports:
+        - 6379:6379
+
+    node:
+        build:
+            context: .
+            dockerfile: Dockerfile.local
+            target: node
+        volumes:
+            - .:/usr/src
+            - ./node_modules:/usr/src/node_modules
+        tty: true
+volumes:
+    db-data: ~
